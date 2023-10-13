@@ -20,8 +20,6 @@ cwd=$(pwd)
 # save os name to a variable
 os=$(system_profiler SPSoftwareDataType | grep 'System Version:' | sed 's/System Version: //g' | sed 's/;//g')
 
-echo "The OS is: $os"
-
 # disable globbing, to prevent OpenAI's command from being prematurely expanded
 set -f
 
