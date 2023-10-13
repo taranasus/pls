@@ -1,13 +1,14 @@
-# Please CLI
+# PLS3 and PLS4 by Taranasus
 
-Please is a CLI tool that translates natural language into shell commands. 
-This is a copy and enhanced version of that tool that better suits my needs. This is a very wild high risk version that does not wait for validation of the command you've requested, it will just run it. Use with care
+Please is a CLI tool that translates natural language into shell commands. It's based on https://github.com/MxDkl/pls
+This is a copy and enhanced version of that tool that better suits my needs. This is a very wild, high risk version that does not wait for validation of the command you've requested, it will just run it. Use with care
 
 Installation:
 - clone this repo
 - add your openai api key to the pls file
-- chmod +x pls
-- add pls to your path
+- chmod +x pls3
+- chmod +x pls4
+- add pls folder to your path
 
 Requirements:
 - jq binary (commandline JSON processor) - For pls3 and pls4
