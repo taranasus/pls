@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # add your openai api key here
-token="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"
+token="sk-x"
 
 # exit if no command is given
 if [ -z "$1" ]; then
