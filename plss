@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# add your openai api key here
+token="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"
+
+# disable globbing, to prevent OpenAI's command from being prematurely expanded
+set -f
+
+# exit if no command is given
+if [ -z "$1" ]; then
+  echo -e -n "\033[0;31m" # set color to red
+  echo "Error: no command given."
+  exit 1
+fi
+
+# get user cli arguments as a string
+args=$*
+
+# save the current working directory to a variable
+cwd=$(pwd)
+
+# Build the JSON request using jq
+request=$(jq -n \
+  --arg model "gpt-4" \
+  --arg shell "$SHELL" \
+  --arg cwd "$cwd" \
+  --arg args "$args" \
+  '{
+    model: $model,
+    messages: [
+      {role: "system", content: "You are a helpful assistant. You will generate \($shell) commands based on user input. Your response should contain ONLY the command and NO explanation. Do NOT ever use newlines to seperate commands, instead use ; or &&. The current working directory is \($cwd)."},
+      {role: "user", content: $args}
+    ],
+    temperature: 0.0
+  }')
+
+# Use echo to pass the request JSON to curl via stdin
+response=$(echo $request | curl -s https://api.openai.com/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer '$token'' \
+  -d @-)
+
+# if OpenAI reported an error, tell the user, then exit the script
+error=$(echo $response | jq -r '.error.message')
+if [ "$error" != "null" ]
+then
+    echo -e -n "\033[0;31m" # set color to red
+    echo "Error from OpenAI API:"
+    echo $error
+    echo "Aborted."
+    exit 1
+fi
+
+# parse the 'content' field of the response which is in JSON format
+command=$(echo $response | jq -r '.choices[0].message.content')
+
+# echo the command
+echo -e -n "\033[0;35m" # set color to red
+echo "Command:" $command
+
+# re-enable globbing
+set +f
+
+# execute the command
+echo -e -n "\033[0;34m" # set color to blue
+eval "$command"
