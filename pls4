@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# add your openai api key here
-token="sk-x"
+# Read the token from token.txt
+# The file should should contain the token, on one line, in the format sk-xxxxxxxxxxxxxxxxxxxxxxxx
+token=$(cat token.txt)
 
 # exit if no command is given
 if [ -z "$1" ]; then
