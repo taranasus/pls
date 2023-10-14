@@ -5,11 +5,16 @@ pls is a CLI tool that translates natural language into shell commands for MacOS
 This is a copy and enhanced version of that tool that better suits my needs. This is a very wild, high risk version that does not wait for validation of the command you've requested, it will just run it. Use with care
 
 Installation:
-- Clone this repo
-- Create a token.txt file in the pls folder with your openai api key in it
-- In a terminal, in the folder of the repo, run "chmod +x pls3"
-- In a terminal, in the folder of the repo, run "chmod +x pls4"
-- Add the pls folder to your path. You can do this by using the terminal to write "pls4 add this folder to the PATH".
+- Clone this repo 
+  - Run git clone https://github.com/taranasus/pls.git to clone the repo into your local machine.
+- Create a token file
+  - Navigate to the cloned repo's folder and create a file named token.txt.
+  - Add your OpenAI API key to this file and save it.
+- Make Scripts Executable:
+  - Open a terminal and navigate to the folder containing the repo.
+  - Run "chmod +x pls3 pls4" to make the pls3 and pls4 scripts executable.
+- Add the folder to your path:
+  - Still in the terminal, run "pls4 add this folder to the PATH" to add the repository folder to your system's PATH environment variable. This will make pls3 and pls4 runnable from any folder
 
 Requirements:
 - jq binary (commandline JSON processor)
