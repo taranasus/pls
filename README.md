@@ -1,6 +1,7 @@
 # PLS3 and PLS4 by Taranasus
 
-pls is a CLI tool that translates natural language into shell commands. It's based on https://github.com/MxDkl/pls
+pls is a CLI tool that translates natural language into shell commands for MacOS. It might work on Linux too, I haven't tested it. It's based on https://github.com/MxDkl/pls
+
 This is a copy and enhanced version of that tool that better suits my needs. This is a very wild, high risk version that does not wait for validation of the command you've requested, it will just run it. Use with care
 
 Installation:
