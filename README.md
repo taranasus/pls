@@ -5,10 +5,10 @@ This is a copy and enhanced version of that tool that better suits my needs. Thi
 
 Installation:
 - clone this repo
-- add your openai api key to the pls file
-- chmod +x pls3
-- chmod +x pls4
-- add pls folder to your path
+- create a token.txt file in the pls folder with your openai api key in it
+- in a terminal, in the folder of the repo, run "chmod +x pls3"
+- in a terminal, in the folder of the repo, run "chmod +x pls4"
+- add pls folder to your path. You can do this by using the terminal to write "pls4 add this folder to the PATH".
 
 Requirements:
 - jq binary (commandline JSON processor) - For pls3 and pls4
