@@ -12,8 +12,11 @@ Installation:
 - Add the pls folder to your path. You can do this by using the terminal to write "pls4 add this folder to the PATH".
 
 Requirements:
-- jq binary (commandline JSON processor) - For pls3 and pls4
+- jq binary (commandline JSON processor)
 - openai api key in a token.txt file
+
+Note:
+- The pls file is only there so I can merge from MxDkl's repo if he makes any changes. It's not used by my version of the tool.
 
 Usage:
 ```
