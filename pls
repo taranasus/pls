@@ -106,9 +106,9 @@ stream_response() {
   # If query mode is not enabled, execute the command
   if [ "$query_mode" = false ]; then
     echo -e -n "\033[0;34m" # set color to blue
-    # After collecting the full response
-    cleaned_response=$(echo "$response" | sed 's/^[ \t]*//;s/[ \t]*$//' | tr -d '\n')
-    ( eval "$cleaned_response" )
+    # After collecting the full response    
+    eval "$response"
+   
   fi
 
   # Calculate and display costs
