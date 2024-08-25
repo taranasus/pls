@@ -37,8 +37,8 @@ pls zip all files in the current directory that contain the word "foo" and save 
 Example output:
 
 taranasus@taranasus-MacBook-Air _Unsorted % pls give me a totla filecount including subfolders
-\033[0;32m[GPT]\033[0m \033[0;32m[$0.00002]\033[0m find . -type f | wc -l
-\033[0;34m   21884\033[0m
+[GPT] [$0.00002] find . -type f | wc -l
+   21884
 
 Warning:
 - be careful when running as root because it is unpredictable and could do anything
