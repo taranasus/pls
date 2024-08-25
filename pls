@@ -1,30 +1,34 @@
 #!/bin/bash
 
 # Read the token from token.txt
-# The file should contain the token, on one line, in the format sk-xxxxxxxxxxxxxxxxxxxxxxxx
 token=$(cat "$(dirname "$0")/token.txt")
 
-# Initialize variables for model and debug mode
+# Initialize variables for model, label, color, cost, and modes
 model="gpt-4o-mini"
-label="\033[0;32m[GPT]" # default green color for GPT
+label="\033[0;32m[GPT]" # green color for GPT-4o-mini
+color="\033[0;32m" # green by default
 input_cost_per_million=0.150
 output_cost_per_million=0.600
 debug_mode=false
+query_mode=false
 
 # Parse command line arguments
 while [[ "$1" == -* ]]; do
   case "$1" in
     -a)
       model="gpt-4o"
-      label="\033[0;35m[GPT ADVANCED]" # purple color for GPT ADVANCED
+      label="\033[0;35m[GPT ADVANCED]" # purple color for GPT-4o
+      color="\033[0;35m" # change color to purple for GPT-4o
       input_cost_per_million=5.00
       output_cost_per_million=15.00
       ;;
     -d)
       debug_mode=true
       ;;
+    -q)
+      query_mode=true
+      ;;
     *)
-      echo -e -n "\033[0;31m" # set color to red
       echo "Unknown option: $1"
       exit 1
       ;;
@@ -32,12 +36,12 @@ while [[ "$1" == -* ]]; do
   shift
 done
 
-# Get user CLI arguments as a string
+# Get user input as a string
 args=$*
 
-# If no arguments are given, prompt the user for input
+# If no arguments, prompt the user
 if [ -z "$args" ]; then
-  echo -e "\033[0;33m" # set color to yellow for the prompt
+  echo -e "\033[0;33m" # yellow for prompt
   read -p "SUP? : " args
 fi
 
@@ -45,69 +49,81 @@ fi
 cwd=$(pwd)
 
 # Save OS name to a variable
-os=$(system_profiler SPSoftwareDataType | grep 'System Version:' | sed 's/System Version: //g' | sed 's/;//g')
+os=$(uname -s)
 
 # Disable globbing, to prevent OpenAI's command from being prematurely expanded
 set -f
 
-# Build the JSON request using jq
+# Build the system message
+system_message="You are a helpful assistant."
+if [ "$query_mode" = false ]; then
+  system_message+=" You will generate \($SHELL) commands based on user input. Your response should contain ONLY the command and NO explanation. Do NOT ever use newlines to separate commands, instead use ; or &&. The operating system is $os. The current working directory is $cwd."
+fi
+
+# Create the JSON payload
 request=$(jq -n \
   --arg model "$model" \
-  --arg shell "$SHELL" \
-  --arg cwd "$cwd" \
-  --arg os "$os" \
   --arg args "$args" \
+  --arg system_message "$system_message" \
   '{
     model: $model,
     messages: [
-      {role: "system", content: "You are a helpful assistant. You will generate \($shell) commands based on user input. Your response should contain ONLY the command and NO explanation. Do NOT ever use newlines to separate commands, instead use ; or &&. The operating system is \($os).The current working directory is \($cwd)."},
+      {role: "system", content: $system_message},
       {role: "user", content: $args}
     ],
-    temperature: 0.0
+    temperature: 0.0,
+    stream: true
   }')
 
-# Use echo to pass the request JSON to curl via stdin
-response=$(echo $request | curl -s https://api.openai.com/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer '$token'' \
-  -d @-)
+# Function to directly print out the stream with labels and colors, and save it to a variable
+stream_response() {
+  echo -ne "$label " # Print the label with color before starting the stream
+  response=""
+  
+  # Write curl output to a temporary file
+  temp_file=$(mktemp)
+  curl -N -s https://api.openai.com/v1/chat/completions \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $token" \
+    -d "$request" > "$temp_file"
+  
+  # Now read from the temporary file
+  while IFS= read -r line; do
+    if [[ "$line" == *"[DONE]"* ]]; then
+      break
+    fi
+    content=$(echo "$line" | sed 's/^data: //g' | jq -r '.choices[0].delta.content // empty')
+    if [ -n "$content" ]; then
+      echo -ne "$color$content"
+      response+="$content"
+    fi
+  done < "$temp_file"
+  
+  rm "$temp_file" # Clean up the temporary file
+  
+  echo -e "\033[0m" # Reset color after stream ends
 
-# If OpenAI reported an error, tell the user, then exit the script
-error=$(echo $response | jq -r '.error.message')
-if [ "$error" != "null" ]
-then
-    echo -e -n "\033[0;31m" # set color to red
-    echo "Error from OpenAI API:"
-    echo $error
-    echo "Aborted."
-    exit 1
-fi
+  # If query mode is not enabled, execute the command
+  if [ "$query_mode" = false ]; then
+    echo -e -n "\033[0;34m" # set color to blue
+    # After collecting the full response
+    cleaned_response=$(echo "$response" | sed 's/^[ \t]*//;s/[ \t]*$//' | tr -d '\n')
+    ( eval "$cleaned_response" )
+  fi
 
-# If debug mode is enabled, print the full JSON response and exit
-if [ "$debug_mode" = true ]; then
-  echo -e "\033[0;33m" # set color to yellow for debugging output
-  echo "$response"
-  exit 0
-fi
+  # Calculate and display costs
+  prompt_tokens=$(echo "$response" | wc -c)
+  completion_tokens=$(echo "$response" | wc -c)
+  input_cost=$(echo "scale=6; ($prompt_tokens / 1000000) * $input_cost_per_million" | bc)
+  output_cost=$(echo "scale=6; ($completion_tokens / 1000000) * $output_cost_per_million" | bc)
+  total_cost=$(echo "scale=6; $input_cost + $output_cost" | bc)
+  total_cost=$(printf "%.6f" "$total_cost" | sed 's/0*$//;s/\.$//')
+  
+  echo -e "\033[0m[Total Cost: \$${total_cost}]"
+}
 
-# Parse the 'content', 'prompt_tokens', and 'completion_tokens' fields from the response which is in JSON format
-command=$(echo $response | jq -r '.choices[0].message.content')
-prompt_tokens=$(echo $response | jq -r '.usage.prompt_tokens')
-completion_tokens=$(echo $response | jq -r '.usage.completion_tokens')
-
-# Calculate the costs
-input_cost=$(echo "scale=6; ($prompt_tokens / 1000000) * $input_cost_per_million" | bc)
-output_cost=$(echo "scale=6; ($completion_tokens / 1000000) * $output_cost_per_million" | bc)
-total_cost=$(echo "scale=6; $input_cost + $output_cost" | bc)
-
-total_cost=$(printf "%.6f" "$total_cost" | sed 's/0*$//;s/\.$//')
-
-# Echo the command with appropriate label and total cost
-echo -e "$label [\$${total_cost}] $command"
+# Start streaming the response
+stream_response
 
 # Re-enable globbing
 set +f
-
-# Execute the command
-echo -e -n "\033[0;34m" # set color to blue
-eval "$command"
