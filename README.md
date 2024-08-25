@@ -1,4 +1,4 @@
-# PLS3 and PLS4 by Taranasus
+# PLS by Taranasus
 
 pls is a CLI tool that translates natural language into shell commands for MacOS. It might work on Linux too, I haven't tested it. It's based on https://github.com/MxDkl/pls
 
@@ -12,32 +12,33 @@ Installation:
   - Add your OpenAI API key to this file and save it.
 - Make Scripts Executable:
   - Open a terminal and navigate to the folder containing the repo.
-  - Run "chmod +x pls3 pls4" to make the pls3 and pls4 scripts executable.
+  - Run "chmod +x pls" to make the script executable.
 - Add the folder to your path:
-  - Still in the terminal, run "pls4 add this folder to the PATH" to add the repository folder to your system's PATH environment variable. This will make pls3 and pls4 runnable from any folder
+  - Still in the terminal, run "pls add this folder to the PATH" to add the repository folder to your system's PATH environment variable. This will make pls runnable from any folder
 
 Requirements:
 - jq binary (commandline JSON processor)
 - openai api key in a token.txt file
 
-Note:
-- The pls file is only there so I can merge from MxDkl's repo if he makes any changes. It's not used by my version of the tool.
-
 Usage:
 ```
-FOR GPT 3.5 TURBO:
-> pls3 [natural language command] 
-FOR GPT 4:
-> pls4 [natural language command]
+> pls [natural language command]
 ```
-Examples:
+
+Example commands:
 ```
-pls3 list all files in the current directory
-pls4 list all files in the current directory that contain "foo"
-pls3 make a directory called "foo" with 3 files in it that each have 1000 random words
-pls4 use iptables to forward all traffic from port 80 to port 8501
-pls3 zip all files in the current directory that contain the word "foo" and save to desktop
+pls list all files in the current directory
+pls list all files in the current directory that contain "foo"
+pls make a directory called "foo" with 3 files in it that each have 1000 random words
+pls use iptables to forward all traffic from port 80 to port 8501
+pls zip all files in the current directory that contain the word "foo" and save to desktop
 ```
+
+Example output:
+
+taranasus@taranasus-MacBook-Air _Unsorted % pls give me a totla filecount including subfolders
+\033[0;32m[GPT]\033[0m \033[0;32m[$0.00002]\033[0m find . -type f | wc -l
+\033[0;34m   21884\033[0m
 
 Warning:
 - be careful when running as root because it is unpredictable and could do anything

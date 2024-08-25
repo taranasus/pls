@@ -2,7 +2,7 @@
 
 # Read the token from token.txt
 # The file should should contain the token, on one line, in the format sk-xxxxxxxxxxxxxxxxxxxxxxxx
-token=$(cat token.txt)
+token=$(cat "$(dirname "$0")/token.txt")
 
 # exit if no command is given
 if [ -z "$1" ]; then
@@ -11,6 +11,34 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+# Initialize variables for model and debug mode
+model="gpt-4o-mini"
+label="\033[0;32m[GPT]" # default green color for GPT
+input_cost_per_million=0.150
+output_cost_per_million=0.600
+debug_mode=false
+
+# Parse command line arguments
+while [[ "$1" == -* ]]; do
+  case "$1" in
+    -a)
+      model="gpt-4o"
+      label="\033[0;35m[GPT ADVANCED]" # purple color for GPT ADVANCED
+      input_cost_per_million=5.00
+      output_cost_per_million=15.00
+      ;;
+    -d)
+      debug_mode=true
+      ;;
+    *)
+      echo -e -n "\033[0;31m" # set color to red
+      echo "Unknown option: $1"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
 # get user cli arguments as a string
 args=$*
 
@@ -18,20 +46,32 @@ args=$*
 cwd=$(pwd)
 
 # save os name to a variable
-os=$(cat /etc/*-release | grep "NAME" -m 1 | cut -d "=" -f 2 | sed 's/"//g' | tr ' ' '_')
+os=$(system_profiler SPSoftwareDataType | grep 'System Version:' | sed 's/System Version: //g' | sed 's/;//g')
 
 # disable globbing, to prevent OpenAI's command from being prematurely expanded
 set -f
 
-# use curl to get openai api response
-response=$(curl -s https://api.openai.com/v1/chat/completions \
+# Build the JSON request using jq
+request=$(jq -n \
+  --arg model "$model" \
+  --arg shell "$SHELL" \
+  --arg cwd "$cwd" \
+  --arg os "$os" \
+  --arg args "$args" \
+  '{
+    model: $model,
+    messages: [
+      {role: "system", content: "You are a helpful assistant. You will generate \($shell) commands based on user input. Your response should contain ONLY the command and NO explanation. Do NOT ever use newlines to separate commands, instead use ; or &&. The operating system is \($os).The current working directory is \($cwd)."},
+      {role: "user", content: $args}
+    ],
+    temperature: 0.0
+  }')
+
+# Use echo to pass the request JSON to curl via stdin
+response=$(echo $request | curl -s https://api.openai.com/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer '$token'' \
-  -d '{
-  "model": "gpt-4-0613",
-  "messages": [{"role": "system", "content": "You are a helpful assistant. You will generate '$SHELL' commands based on user input. Your response should contain ONLY the command and NO explanation. Do NOT ever use newlines to seperate commands, instead use ; or &&. The operating system is '$os'. The current working directory is '$cwd'."}, {"role": "user", "content": "'"$args"'"}],
-  "temperature": 0.0
-}')
+  -d @-)
 
 # if OpenAI reported an error, tell the user, then exit the script
 error=$(echo $response | jq -r '.error.message')
@@ -44,36 +84,31 @@ then
     exit 1
 fi
 
-# parse the 'content' field of the response which is in JSON format
-command=$(echo $response | jq -r '.choices[0].message.content')
-
-# echo the command
-echo -e -n "\033[0;31m" # set color to red
-echo $command
-
-# make the user confirm the command
-echo -e -n "\033[0;34m" # set color to blue
-read -n 1 -s -r -p "Press any button to continue, or n to cancel: "
-
-# if the user presses n, exit the script
-if [[ $REPLY =~ ^[Nn]$ ]]
-then
-    echo -e -n "\033[0;31m" # set color to red
-    echo $REPLY
-    echo "Aborted."
-    exit 0
+# If debug mode is enabled, print the full JSON response and exit
+if [ "$debug_mode" = true ]; then
+  echo -e "\033[0;33m" # set color to yellow for debugging output
+  echo "$response"
+  exit 0
 fi
-echo -e -n "\033[0;32m" # set color to green
-echo $REPLY
-echo "Executing command..."
-echo ""
+
+# parse the 'content', 'prompt_tokens', and 'completion_tokens' fields from the response which is in JSON format
+command=$(echo $response | jq -r '.choices[0].message.content')
+prompt_tokens=$(echo $response | jq -r '.usage.prompt_tokens')
+completion_tokens=$(echo $response | jq -r '.usage.completion_tokens')
+
+# Calculate the costs
+input_cost=$(echo "scale=6; ($prompt_tokens / 1000000) * $input_cost_per_million" | bc)
+output_cost=$(echo "scale=6; ($completion_tokens / 1000000) * $output_cost_per_million" | bc)
+total_cost=$(echo "scale=6; $input_cost + $output_cost" | bc)
+
+total_cost=$(printf "%.6f" "$total_cost" | sed 's/0*$//;s/\.$//')
+
+# echo the command with appropriate label and total cost
+echo -e "$label [\$${total_cost}] $command"
 
 # re-enable globbing
 set +f
 
 # execute the command
-echo -e "\033[0m" # reset color
+echo -e -n "\033[0;34m" # set color to blue
 eval "$command"
-
-# navigate back to the original working directory
-cd $cwd
