@@ -99,4 +99,4 @@ taranasus@taranasus-MacBook-Air _Unsorted % pls give me a totla filecount includ
 - **Caution**: This tool runs commands immediately and does not wait for user confirmation. Be especially careful when running commands as root, as it could execute destructive actions.
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE.md) file for details.
