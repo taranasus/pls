@@ -1,8 +1,30 @@
 # PLS by Taranasus
 
+## TL;DR
+
+**PLS** is a powerful CLI tool that translates natural language into shell commands, executing them instantly. Perfect for quickly navigating your filesystem, managing files, or executing complex commands without having to remember the exact syntax.
+
+### Example
+
+Command:
+&&&
+pls zip all files in the current directory that contain the word "report" and save to desktop
+&&&
+
+Output:
+&&&
+[GPT] [$0.00002] zip ~/Desktop/reports.zip ./*report*
+&&&
+
+This single command zips all files in your current directory containing the word "report" and saves the resulting archive to your desktop—all without manually constructing the `zip` command yourself.
+
+## Long Description
+
 PLS (Please) is a command-line interface (CLI) tool that translates natural language into shell commands for macOS. While it's primarily designed for macOS, it might work on Linux too, although this hasn't been tested. PLS is based on [MxDkl/pls](https://github.com/MxDkl/pls), with enhancements to better suit specific needs.
 
 This is a high-risk version that does not wait for validation of the command you’ve requested—it will run immediately. Use with care, especially when running as root.
+
+By default, PLS uses gpt-4o-mini to generate commands, which I find to be more than adiquate 99.9% of the time at dirt-cheap prices. However, you can use the advanced model (gpt-4o) by using the `-a` flag which is slightly smarter and waaaay more expensive. 
 
 ## Features
 - Translate natural language commands directly into shell commands.
