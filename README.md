@@ -16,6 +16,22 @@ Output:
 [GPT] [$0.00002] zip ~/Desktop/reports.zip ./*report*
 ```
 
+Command:
+```
+pls
+
+SUP? : tell me what os i'm using
+```
+
+Output:
+```
+[GPT] [$0.00002] sw_vers
+ProductName:		macOS
+ProductVersion:		14.6.1
+BuildVersion:		23G93
+```
+
+
 This single command zips all files in your current directory containing the word "report" and saves the resulting archive to your desktop—all without manually constructing the `zip` command yourself.
 
 ## Long Description

@@ -1,15 +1,8 @@
 #!/bin/bash
 
 # Read the token from token.txt
-# The file should should contain the token, on one line, in the format sk-xxxxxxxxxxxxxxxxxxxxxxxx
+# The file should contain the token, on one line, in the format sk-xxxxxxxxxxxxxxxxxxxxxxxx
 token=$(cat "$(dirname "$0")/token.txt")
-
-# exit if no command is given
-if [ -z "$1" ]; then
-  echo -e -n "\033[0;31m" # set color to red
-  echo "Error: no command given."
-  exit 1
-fi
 
 # Initialize variables for model and debug mode
 model="gpt-4o-mini"
@@ -39,16 +32,22 @@ while [[ "$1" == -* ]]; do
   shift
 done
 
-# get user cli arguments as a string
+# Get user CLI arguments as a string
 args=$*
 
-# save the current working directory to a variable
+# If no arguments are given, prompt the user for input
+if [ -z "$args" ]; then
+  echo -e "\033[0;33m" # set color to yellow for the prompt
+  read -p "SUP? : " args
+fi
+
+# Save the current working directory to a variable
 cwd=$(pwd)
 
-# save os name to a variable
+# Save OS name to a variable
 os=$(system_profiler SPSoftwareDataType | grep 'System Version:' | sed 's/System Version: //g' | sed 's/;//g')
 
-# disable globbing, to prevent OpenAI's command from being prematurely expanded
+# Disable globbing, to prevent OpenAI's command from being prematurely expanded
 set -f
 
 # Build the JSON request using jq
@@ -73,7 +72,7 @@ response=$(echo $request | curl -s https://api.openai.com/v1/chat/completions \
   -H 'Authorization: Bearer '$token'' \
   -d @-)
 
-# if OpenAI reported an error, tell the user, then exit the script
+# If OpenAI reported an error, tell the user, then exit the script
 error=$(echo $response | jq -r '.error.message')
 if [ "$error" != "null" ]
 then
@@ -91,7 +90,7 @@ if [ "$debug_mode" = true ]; then
   exit 0
 fi
 
-# parse the 'content', 'prompt_tokens', and 'completion_tokens' fields from the response which is in JSON format
+# Parse the 'content', 'prompt_tokens', and 'completion_tokens' fields from the response which is in JSON format
 command=$(echo $response | jq -r '.choices[0].message.content')
 prompt_tokens=$(echo $response | jq -r '.usage.prompt_tokens')
 completion_tokens=$(echo $response | jq -r '.usage.completion_tokens')
@@ -103,12 +102,12 @@ total_cost=$(echo "scale=6; $input_cost + $output_cost" | bc)
 
 total_cost=$(printf "%.6f" "$total_cost" | sed 's/0*$//;s/\.$//')
 
-# echo the command with appropriate label and total cost
+# Echo the command with appropriate label and total cost
 echo -e "$label [\$${total_cost}] $command"
 
-# re-enable globbing
+# Re-enable globbing
 set +f
 
-# execute the command
+# Execute the command
 echo -e -n "\033[0;34m" # set color to blue
 eval "$command"
