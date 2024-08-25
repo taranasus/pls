@@ -7,14 +7,14 @@
 ### Example
 
 Command:
-&&&
+```
 pls zip all files in the current directory that contain the word "report" and save to desktop
-&&&
+```
 
 Output:
-&&&
+```
 [GPT] [$0.00002] zip ~/Desktop/reports.zip ./*report*
-&&&
+```
 
 This single command zips all files in your current directory containing the word "report" and saves the resulting archive to your desktop—all without manually constructing the `zip` command yourself.
 
